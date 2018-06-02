@@ -419,10 +419,22 @@ if test x$cross_compiling = xno -a x$enable_bindings = xyes; then
       SWIG_PYTHON
       AC_CHECK_PROGS([PATCH], [patch])
     fi
+    if test -n "$SWIG"; then
+      AM_CONDITIONAL([HAVE_SWIG], [true])
+
+      AC_PROG_CXX
+      AX_COMPILER_FLAGS_CXXFLAGS
+      AX_SWIG_ENABLE_CXX
+      SWIG_MULTI_MODULE_SUPPORT
+    else
+      AC_MSG_WARN([swig not found])
+      AM_CONDITIONAL([fastdepCXX], [false])
+      AM_CONDITIONAL([HAVE_SWIG], [false])
+    fi
     dnl swig not required for perl, we ship swig_perl.c
-    dnl AX_SWIG_ENABLE_CXX
-    dnl SWIG_MULTI_MODULE_SUPPORT
 else
+    AM_CONDITIONAL([fastdepCXX], [false])
+    AM_CONDITIONAL([HAVE_SWIG], [false])
     AC_MSG_WARN([disabled swig bindings])
     if test x$enable_python != xno; then
       if test x$enable_python = xyes; then
@@ -688,6 +700,7 @@ AC_CONFIG_FILES([
 	examples/Makefile
 	bindings/Makefile
 	bindings/python/Makefile
+	bindings/cxx/Makefile
 	test/Makefile
 	test/xmlsuite/Makefile
 	test/unit-testing/Makefile
