@@ -1303,7 +1303,7 @@ obj_string_stream (Bit_Chain *restrict dat, Dwg_Object *restrict obj,
 
   bit_advance_position (str, -1); //-17
   str->byte -= 2;
-  LOG_HANDLE (" @%lu.%u", str->byte, str->bit & 7);
+  // LOG_HANDLE (" @%lu.%u", str->byte, str->bit & 7);
   data_size = (BITCODE_RL)bit_read_RS (str);
   LOG_HANDLE (" data_size: %u/0x%x", data_size, data_size);
 
@@ -1323,8 +1323,8 @@ obj_string_stream (Bit_Chain *restrict dat, Dwg_Object *restrict obj,
   str->byte -= 2;
   if (data_size > obj->bitsize)
     {
-      LOG_WARN ("Invalid string stream data_size: @%lu.%u\n", str->byte,
-                str->bit & 7);
+      LOG_WARN ("Invalid string stream data_size: @%lu.%u", str->byte,
+                 str->bit & 7);
       obj->has_strings = 0;
       bit_reset_chain (str);
       return DWG_ERR_NOTYETSUPPORTED; // a very low severity error
