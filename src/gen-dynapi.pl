@@ -445,7 +445,7 @@ $DXF{$n}->{'ownerhandle'} = 330;
 $DXF{$n}->{'xdicobjhandle'} = 360;
 $DXF{$n}->{'reactors'} = 330;
 
-$n = 'SummaryInfo';
+$n = 'summaryinfo';
 dxfin_spec "$srcdir/summaryinfo.spec";
 
 # dxfclassname for each of our classes and subclasses (not complete)
@@ -715,7 +715,7 @@ sub out_struct {
     return;
   }
   my @declarations = @{$s->{declarations}};
-  if ($n =~ /^_dwg_(header_variables|object_object|object_entity|SummaryInfo)$/) {
+  if ($n =~ /^_dwg_(header_variables|object_object|object_entity|_summaryinfo)$/) {
     @declarations = sort {
       my $aname = $a->{declarators}->[0]->{declarator};
       my $bname = $b->{declarators}->[0]->{declarator};
@@ -894,7 +894,7 @@ for (<DATA>) {
       } elsif ($1 eq 'object_entity') {
         print $doc "\@strong{Common Entity fields} \@anchor{Common Entity fields}\n";
         print $doc "\@cindex Common Entity fields\n\n";
-      } elsif ($1 eq 'SummaryInfo') {
+      } elsif ($1 eq 'summaryinfo') {
         print $doc "\n\@node SummaryInfo\n\@section SummaryInfo\n\@cindex SummaryInfo\n\n";
         print $doc "All Section SummaryInfo fields.\n\n";
       } else {
@@ -903,7 +903,8 @@ for (<DATA>) {
       }
       out_struct($tmpl, $1);
     } elsif ($tmpl =~ /^struct Dwg_(\w+)/) {
-      if ($1 eq 'SummaryInfo') {
+      warn $tmpl;
+      if ($1 eq 'summaryinfo') {
         print $doc "\n\@node SummaryInfo\n\@section SummaryInfo\n\@cindex SummaryInfo\n\n";
         print $doc "All Section SummaryInfo fields.\n\n";
       } else {
@@ -1427,7 +1428,7 @@ static const char dwg_object_names[][MAXLEN_OBJECTS] = {
 @@struct _dwg_object_entity@@
 @@struct _dwg_object_object@@
 
-@@struct Dwg_SummaryInfo@@
+@@struct _dwg_summaryinfo@@
 
 struct _name_type_fields {
   const char *const name;
@@ -1485,7 +1486,7 @@ const struct _name_type_fields*
  __nonnull ((1))
 _find_entity (const char *name)
 {
-  const char *p = bsearch (name, dwg_name_types, NUM_NAME_TYPES,
+  const char *p = (const char *)bsearch (name, dwg_name_types, NUM_NAME_TYPES,
                            sizeof (dwg_name_types[0]),
                            _name_struct_cmp);
   if (p)
@@ -1502,7 +1503,7 @@ const struct _name_subclass_fields*
  __nonnull ((1))
 _find_subclass (const char *name)
 {
-  const char *p = bsearch (name, dwg_list_subclasses, NUM_SUBCLASSES,
+  const char *p = (const char *)bsearch (name, dwg_list_subclasses, NUM_SUBCLASSES,
                            sizeof (dwg_list_subclasses[0]),
                            _name_struct_cmp);
   if (p)
@@ -1963,7 +1964,7 @@ dynapi_set_helper (void *restrict old, const Dwg_DYNAPI_field *restrict f,
       // ascii
       else if (strEQc (f->type, "TF") || (f->is_string && dwg_version < R_2007))
         {
-          char *str = malloc (strlen (*(char**)value)+1);
+          char *str = (char *)malloc (strlen (*(char**)value)+1);
           strcpy (str, *(char**)value);
           memcpy (old, &str, sizeof (char*)); // size of ptr
         }
@@ -1976,14 +1977,14 @@ dynapi_set_helper (void *restrict old, const Dwg_DYNAPI_field *restrict f,
           else // source is already TU
             {
 #if defined(HAVE_WCHAR_H) && defined(SIZEOF_WCHAR_T) && SIZEOF_WCHAR_T == 2
-              wstr = malloc (2 * (wcslen (*(wchar_t **)value) + 1));
+              wstr = (BITCODE_TU)malloc (2 * (wcslen (*(wchar_t **)value) + 1));
               wcscpy ((wchar_t *)wstr, *(wchar_t **)value);
 #else
               int length = 0;
               for (; (*(BITCODE_TU*)value)[length]; length++)
                 ;
               length++;
-              wstr = malloc (2 * length);
+              wstr = (BITCODE_TU)malloc (2 * length);
               memcpy (wstr, value, length * 2);
 #endif
             }

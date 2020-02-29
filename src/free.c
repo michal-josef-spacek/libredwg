@@ -44,7 +44,7 @@ static int env_var_checked_p;
 
 /* the current version per spec block */
 static unsigned int cur_ver = 0;
-static Bit_Chain pdat = { NULL, 0, 0, 0, 0, 0 };
+static Bit_Chain pdat = { NULL, 0, 0, 0, 0, R_INVALID };
 static BITCODE_BL rcount1, rcount2;
 
 /*--------------------------------------------------------------------------------
@@ -851,7 +851,7 @@ dwg_free_header_vars (Dwg_Data *dwg)
 static int
 dwg_free_summaryinfo (Dwg_Data *dwg)
 {
-  struct Dwg_SummaryInfo *_obj = &dwg->summaryinfo;
+  Dwg_SummaryInfo *_obj = &dwg->summaryinfo;
   Dwg_Object *obj = NULL;
   Bit_Chain *dat = &pdat;
 
@@ -864,7 +864,7 @@ dwg_free_summaryinfo (Dwg_Data *dwg)
 static int
 dwg_free_appinfo (Dwg_Data *dwg)
 {
-  struct Dwg_AppInfo *_obj = &dwg->appinfo;
+  Dwg_AppInfo *_obj = &dwg->appinfo;
   Dwg_Object *obj = NULL;
   Bit_Chain *dat = &pdat;
 
@@ -876,7 +876,7 @@ dwg_free_appinfo (Dwg_Data *dwg)
 static int
 dwg_free_filedeplist (Dwg_Data *dwg)
 {
-  struct Dwg_FileDepList *_obj = &dwg->filedeplist;
+  Dwg_FileDepList *_obj = &dwg->filedeplist;
   Dwg_Object *obj = NULL;
   Bit_Chain *dat = &pdat;
   BITCODE_RL vcount;
@@ -889,7 +889,7 @@ dwg_free_filedeplist (Dwg_Data *dwg)
 static int
 dwg_free_security (Dwg_Data *dwg)
 {
-  struct Dwg_Security *_obj = &dwg->security;
+  Dwg_Security *_obj = &dwg->security;
   Dwg_Object *obj = NULL;
   Bit_Chain *dat = &pdat;
 
@@ -902,7 +902,7 @@ dwg_free_security (Dwg_Data *dwg)
 static int
 dwg_free_acds (Dwg_Data *dwg)
 {
-  struct Dwg_AcDs *_obj = &dwg->acds;
+  Dwg_AcDs *_obj = &dwg->acds;
   Dwg_Object *obj = NULL;
   Bit_Chain *dat = &pdat;
   BITCODE_RL rcount3 = 0, rcount4, vcount;
@@ -960,7 +960,7 @@ dwg_free (Dwg_Data *dwg)
       FREE_IF (dwg->revhistory.histories);
       FREE_IF (dwg->appinfohistory.unknown_bits);
       //FREE_IF (dwg->objfreespace...);
-      FREE_IF (dwg->template.description);
+      FREE_IF (dwg->Template.description);
       FREE_IF (dwg->header.section);
       for (i = 0; i < dwg->second_header.num_handlers; i++)
         FREE_IF (dwg->second_header.handlers[i].data);
