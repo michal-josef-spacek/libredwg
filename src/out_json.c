@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <locale.h>
 #include <assert.h>
 #ifdef HAVE_CTYPE_H
 #  include <ctype.h>
@@ -2038,6 +2039,7 @@ dwg_write_json (Bit_Chain *restrict dat, Dwg_Data *restrict dwg)
   struct Dwg_Header *obj = &dwg->header;
   int error = 0;
 
+  setlocale (LC_NUMERIC, "C");
   fprintf (dat->fh, "{\n  \"created_by\": \"%s\"", PACKAGE_STRING);
   dat->bit++; // ident
 
