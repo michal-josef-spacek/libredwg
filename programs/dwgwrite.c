@@ -326,15 +326,13 @@ main (int argc, char *argv[])
   free (dat.chain);
   if (infile && dat.fh)
     fclose (dat.fh);
-  if (error >= DWG_ERR_CRITICAL)
+  if (error >= DWG_ERR_CRITICAL || dwg.header.from_version == R_INVALID)
     goto free;
 
-  if (dwg.header.from_version == R_INVALID)
-    dwg.header.from_version = dwg.header.version;
   if (version)
     dat.version = dwg.header.version = dwg_version;
   else
-    dat.version = dwg.header.version = R_2000;
+    dat.version = dwg.header.version = dwg.header.from_version;
 
   if (!outfile)
     {
