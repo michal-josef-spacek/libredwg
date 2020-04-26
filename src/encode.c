@@ -3013,6 +3013,7 @@ dwg_encode (Dwg_Data *restrict dwg, Bit_Chain *restrict dat)
 
       file_dat.chain = calloc (1, sizeof (Dwg_R2004_Header));
       dat = &file_dat;
+      bit_chain_set_version (dat, orig_dat);
       LOG_TRACE ("\nSection R2004_Header @0x100\n");
 
       checksum = _obj->crc32;

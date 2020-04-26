@@ -364,10 +364,6 @@ dwg_write_file (const char *restrict filename, const Dwg_Data *restrict dwg)
   dat.version = (Dwg_Version_Type)dwg->header.version;
   dat.from_version = (Dwg_Version_Type)dwg->header.from_version;
 
-  // json HACK. no wide chars from JSON, because we just encode to R_2000
-  if (dwg->opts & DWG_OPTS_INJSON)
-    dat.from_version = dat.version;
-
   if (dwg->header.version <= R_2000 && dwg->header.from_version > R_2000)
     dwg_fixup_BLOCKS_entities ((Dwg_Data *)dwg);
 

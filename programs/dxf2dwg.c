@@ -265,14 +265,14 @@ main (int argc, char *argv[])
         {
           printf (" as %s\n", version);
           dwg.header.version = dwg_version;
-          if (dwg_version > R_2000)
-            printf ("Warning: encode currently only works for R13-R2000.\n");
+          if (dwg_version == R_2007 || dwg_version < R_13)
+            printf ("Warning: encode currently does not work for pre-r13 and r2007.\n");
           if (dwg.header.from_version == R_INVALID)
             dwg.header.from_version = dwg.header.version;
         }
       else
         {
-          // FIXME: for now only R_2000. later remove this line.
+          // FIXME: for now default to R_2000. later remove this line.
           dwg.header.version = dwg_version;
           if (dwg.header.from_version == R_INVALID)
             dwg.header.from_version = dwg.header.version;
