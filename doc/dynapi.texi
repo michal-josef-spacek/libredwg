@@ -11381,12 +11381,8 @@ H,	DXF 360
 @end vtable
 @end indentedblock
 
-
-@node SummaryInfo
-@section SummaryInfo
-@cindex SummaryInfo
-
-All Section SummaryInfo fields.
+@strong{SummaryInfo}
+@vindex SummaryInfo
 
 @indentedblock
 @vtable @code

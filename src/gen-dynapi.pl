@@ -894,19 +894,20 @@ for (<DATA>) {
       } elsif ($1 eq 'object_entity') {
         print $doc "\@strong{Common Entity fields} \@anchor{Common Entity fields}\n";
         print $doc "\@cindex Common Entity fields\n\n";
-      } elsif ($1 eq 'SummaryInfo') {
-        print $doc "\n\@node SummaryInfo\n\@section SummaryInfo\n\@cindex SummaryInfo\n\n";
-        print $doc "All Section SummaryInfo fields.\n\n";
+      #} elsif ($1 eq 'SummaryInfo') {
+      #  print $doc "\n\@node SummaryInfo\n\@section SummaryInfo\n\@cindex SummaryInfo\n\n";
+      #  print $doc "All Section SummaryInfo fields.\n\n";
       } else {
         print $doc "\@strong{$1}\n";
         print $doc "\@vindex $1\n\n";
       }
       out_struct($tmpl, $1);
     } elsif ($tmpl =~ /^struct Dwg_(\w+)/) {
-      if ($1 eq 'SummaryInfo') {
-        print $doc "\n\@node SummaryInfo\n\@section SummaryInfo\n\@cindex SummaryInfo\n\n";
-        print $doc "All Section SummaryInfo fields.\n\n";
-      } else {
+      #if ($1 eq 'SummaryInfo') {
+      #  print $doc "\n\@node SummaryInfo\n\@section SummaryInfo\n\@cindex SummaryInfo\n\n";
+      #  print $doc "All Section SummaryInfo fields.\n\n";
+      #} else
+      {
         print $doc "\@strong{$1}\n";
         print $doc "\@vindex $1\n\n";
       }
