@@ -201,8 +201,7 @@ for prog in $PROGS ; do
 done
 
 # dwgread converts to json here, but has no --as yet
-# still disabled, see branch work/2004
-if false; then
+#if false; then
 for prog in dwgwrite dwgrewrite dxf2dwg dwg2dxf dxfwrite ; do
     for dwg in $DATA; do
         for as in --as=r13 --as=r2000 --as=r2004 --as=r2010 --as=r2013 --as=r2018; do
@@ -210,7 +209,7 @@ for prog in dwgwrite dwgrewrite dxf2dwg dwg2dxf dxfwrite ; do
         done
     done
 done
-fi
+#fi
 
 case $PROGS in
   *dwggrep*)
