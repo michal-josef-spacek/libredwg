@@ -8252,15 +8252,13 @@ BL
 @item cellstyle_handle
 H
 @item cellstyle
-Dwg_TABLESTYLE_Cell
-@item num_rowstyles
-BL
-@item rowstyles
-Dwg_TABLESTYLE_rowstyles*
-@item num_cells
-BL
-@item cells
-Dwg_TABLESTYLE_Cell*
+Dwg_TABLESTYLE_cellstyle
+@item data_rowstyle
+Dwg_TABLESTYLE_rowstyle
+@item title_rowstyle
+Dwg_TABLESTYLE_rowstyle
+@item header_rowstyle
+Dwg_TABLESTYLE_rowstyle
 
 @end vtable
 @end indentedblock
@@ -10745,8 +10743,26 @@ Dwg_CellContentGeometry*
 @end vtable
 @end indentedblock
 
-@strong{Dwg_TABLESTYLE_Cell} @anchor{Dwg_TABLESTYLE_Cell}
-@vindex Dwg_TABLESTYLE_Cell
+@strong{Dwg_TABLESTYLE_border} @anchor{Dwg_TABLESTYLE_border}
+@vindex Dwg_TABLESTYLE_border
+
+@indentedblock
+@vtable @code
+
+@item parent
+struct _dwg_TABLESTYLE_rowstyle*
+@item linewt
+BSd
+@item visible
+B
+@item color
+CMC
+
+@end vtable
+@end indentedblock
+
+@strong{Dwg_TABLESTYLE_cellstyle} @anchor{Dwg_TABLESTYLE_cellstyle}
+@vindex Dwg_TABLESTYLE_cellstyle
 
 @indentedblock
 @vtable @code
@@ -10765,26 +10781,8 @@ T,	DXF 300
 @end vtable
 @end indentedblock
 
-@strong{Dwg_TABLESTYLE_border} @anchor{Dwg_TABLESTYLE_border}
-@vindex Dwg_TABLESTYLE_border
-
-@indentedblock
-@vtable @code
-
-@item parent
-struct _dwg_TABLESTYLE_rowstyles*
-@item linewt
-BSd
-@item visible
-B
-@item color
-CMC
-
-@end vtable
-@end indentedblock
-
-@strong{Dwg_TABLESTYLE_rowstyles} @anchor{Dwg_TABLESTYLE_rowstyles}
-@vindex Dwg_TABLESTYLE_rowstyles
+@strong{Dwg_TABLESTYLE_rowstyle} @anchor{Dwg_TABLESTYLE_rowstyle}
+@vindex Dwg_TABLESTYLE_rowstyle
 
 @indentedblock
 @vtable @code
@@ -10803,10 +10801,18 @@ CMC,	DXF 62
 CMC,	DXF 63
 @item has_bgcolor
 B,	DXF 283
-@item num_borders
-BL
-@item borders
-Dwg_TABLESTYLE_border*
+@item top_border
+Dwg_TABLESTYLE_border
+@item hor_border
+Dwg_TABLESTYLE_border
+@item bot_border
+Dwg_TABLESTYLE_border
+@item left_border
+Dwg_TABLESTYLE_border
+@item vert_border
+Dwg_TABLESTYLE_border
+@item right_border
+Dwg_TABLESTYLE_border
 @item data_type
 BL,	DXF 90
 @item unit_type

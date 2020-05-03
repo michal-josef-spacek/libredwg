@@ -3542,7 +3542,7 @@ typedef struct _dwg_entity_TABLE
  R2010+ TODO
  */
 
-typedef struct _dwg_TABLESTYLE_Cell
+typedef struct _dwg_TABLESTYLE_cellstyle
 {
   struct _dwg_object_TABLESTYLE *parent;
   Dwg_TABLE_Cell cell;
@@ -3550,17 +3550,17 @@ typedef struct _dwg_TABLESTYLE_Cell
                       ref TABLESTYLE. custom IDs > 100 */
   BITCODE_BL type; /* 1=data, 2=label */
   BITCODE_T name;
-} Dwg_TABLESTYLE_Cell;
+} Dwg_TABLESTYLE_cellstyle;
 
 typedef struct _dwg_TABLESTYLE_border
 {
-  struct _dwg_TABLESTYLE_rowstyles *parent;
+  struct _dwg_TABLESTYLE_rowstyle *parent;
   BITCODE_BSd linewt;
   BITCODE_B visible;
   BITCODE_CMC color;
 } Dwg_TABLESTYLE_border;
 
-typedef struct _dwg_TABLESTYLE_rowstyles
+typedef struct _dwg_TABLESTYLE_rowstyle
 {
   struct _dwg_object_TABLESTYLE *parent;
   BITCODE_H text_style;
@@ -3570,14 +3570,19 @@ typedef struct _dwg_TABLESTYLE_rowstyles
   BITCODE_CMC fill_color;
   BITCODE_B has_bgcolor;
 
-  //6: top, horizontal inside, bottom, left, vertical inside, right
-  BITCODE_BL num_borders; // always 6
-  Dwg_TABLESTYLE_border *borders;
+  // top, horizontal inside, bottom, left, vertical inside, right
+  // Also called Grid
+  Dwg_TABLESTYLE_border top_border;
+  Dwg_TABLESTYLE_border hor_border;
+  Dwg_TABLESTYLE_border bot_border;
+  Dwg_TABLESTYLE_border left_border;
+  Dwg_TABLESTYLE_border vert_border;
+  Dwg_TABLESTYLE_border right_border;
 
-  BITCODE_BL data_type;  // r2007+
+  BITCODE_BL data_type;  // r2010+
   BITCODE_BL unit_type;
   BITCODE_TU format_string;
-} Dwg_TABLESTYLE_rowstyles;
+} Dwg_TABLESTYLE_rowstyle;
 
 typedef struct _dwg_object_TABLESTYLE
 {
@@ -3591,18 +3596,15 @@ typedef struct _dwg_object_TABLESTYLE
   BITCODE_BD vert_cell_margin;
   BITCODE_B title_suppressed;
   BITCODE_B header_suppressed;
-  BITCODE_RC unknown_rc;
+  BITCODE_RC unknown_rc;              // r2010+
   BITCODE_BL unknown_bl1;
   BITCODE_BL unknown_bl2;
-  BITCODE_H cellstyle_handle;    //r2007+
-  Dwg_TABLESTYLE_Cell cellstyle; //r2007+. Note: embedded struct
+  BITCODE_H cellstyle_handle;
+  Dwg_TABLESTYLE_cellstyle cellstyle; // Note: embedded structs
 
-  // 0: data, 1: title, 2: header
-  BITCODE_BL num_rowstyles; // always 3
-  Dwg_TABLESTYLE_rowstyles *rowstyles;
-
-  BITCODE_BL num_cells;   // r2010+ nyi
-  Dwg_TABLESTYLE_Cell* cells;
+  Dwg_TABLESTYLE_rowstyle data_rowstyle;
+  Dwg_TABLESTYLE_rowstyle title_rowstyle;
+  Dwg_TABLESTYLE_rowstyle header_rowstyle;
 } Dwg_Object_TABLESTYLE;
 
 /**

@@ -5589,6 +5589,38 @@ DWG_OBJECT (TABLEGEOMETRY)
   START_OBJECT_HANDLE_STREAM;
 DWG_OBJECT_END
 
+/* top, horizontal inside, bottom, left, vertical inside, right */
+#define TABLESTYLE_rowstyle_border(nam, bord, rcount2)                  \
+  JSON { RECORDs (bord); }                                              \
+  SUB_FIELD_BSd (nam##_rowstyle.bord,linewt, 274+rcount2);              \
+  SUB_FIELD_B (nam##_rowstyle.bord,visible, 284+rcount2);               \
+  SUB_FIELD_CMC (nam##_rowstyle.bord,color, 64+rcount2);                \
+  DECODER { _obj->nam##_rowstyle.bord.parent = &_obj->nam##_rowstyle; } \
+  JSON { ENDRECORD (); }
+
+/* data, title, header */
+#define TABLESTYLE_rowstyle(nam)                                        \
+  JSON { RECORDs (nam##_rowstyle); }                                    \
+  SUB_FIELD_HANDLE (nam##_rowstyle,text_style, 5, 7); /* DXF by name */ \
+  SUB_FIELD_BD (nam##_rowstyle,text_height, 140);                       \
+  SUB_FIELD_BS (nam##_rowstyle,text_alignment, 170);                    \
+  SUB_FIELD_CMC (nam##_rowstyle,text_color, 62);                        \
+  SUB_FIELD_CMC (nam##_rowstyle,fill_color, 63);                        \
+  SUB_FIELD_B (nam##_rowstyle,has_bgcolor, 283);                        \
+  TABLESTYLE_rowstyle_border (nam, top_border, 0);                      \
+  TABLESTYLE_rowstyle_border (nam, hor_border, 1);                      \
+  TABLESTYLE_rowstyle_border (nam, bot_border, 2);                      \
+  TABLESTYLE_rowstyle_border (nam, left_border, 3);                     \
+  TABLESTYLE_rowstyle_border (nam, vert_border, 4);                     \
+  TABLESTYLE_rowstyle_border (nam, right_border, 5);                    \
+  SINCE (R_2007) {                                                      \
+    SUB_FIELD_BL (nam##_rowstyle,data_type, 90);                        \
+    SUB_FIELD_BL (nam##_rowstyle,unit_type, 91);                        \
+    SUB_FIELD_TU (nam##_rowstyle,format_string, 1);                     \
+  }                                                                     \
+  DECODER { _obj->nam##_rowstyle.parent = _obj; }                       \
+  JSON { ENDRECORD (); }
+
 // See TABLE and p20.4.101
 // Added with r2005
 // TABLESTYLE only contains the Table (R24), _Title, _Header and _Data cell style.
@@ -5610,6 +5642,7 @@ DWG_OBJECT (TABLESTYLE)
     FIELD_BL0 (cellstyle.id, 90);
     FIELD_BL0 (cellstyle.type, 91);
     FIELD_T0 (cellstyle.name, 300);
+    DECODER { _obj->cellstyle.parent = _obj; }
   }
   FIELD_BS (flow_direction, 70);
   FIELD_BS (flags, 71);
@@ -5618,39 +5651,11 @@ DWG_OBJECT (TABLESTYLE)
   FIELD_B (title_suppressed, 280);
   FIELD_B (header_suppressed, 281);
 
-  FIELD_VALUE (num_rowstyles) = 3;
-  // 0: data, 1: title, 2: header
-  REPEAT_CN (3, rowstyles, Dwg_TABLESTYLE_rowstyles)
-  REPEAT_BLOCK
-      #define rowstyle rowstyles[rcount1]
-      // TODO in DXF by name
-      SUB_FIELD_HANDLE (rowstyle,text_style, 5, 7);
-      SUB_FIELD_BD (rowstyle,text_height, 140);
-      SUB_FIELD_BS (rowstyle,text_alignment, 170);
-      SUB_FIELD_CMC (rowstyle,text_color, 62); //FIXME
-      SUB_FIELD_CMC (rowstyle,fill_color, 63);
-      SUB_FIELD_B (rowstyle,has_bgcolor, 283);
+  TABLESTYLE_rowstyle (data);
+  TABLESTYLE_rowstyle (title);
+  TABLESTYLE_rowstyle (header);
 
-      _obj->rowstyle.num_borders = 6;
-      // top, horizontal inside, bottom, left, vertical inside, right
-      _REPEAT_CN (6, rowstyle.borders, Dwg_TABLESTYLE_border, 2)
-      REPEAT_BLOCK
-          #define border rowstyle.borders[rcount2]
-          SUB_FIELD_BSd (border,linewt, 274+rcount2);
-          SUB_FIELD_B (border,visible, 284+rcount2);
-          SUB_FIELD_CMC (border,color, 64+rcount2);
-      END_REPEAT_BLOCK
-      END_REPEAT (rowstyle.borders)
-
-      SINCE (R_2007) {
-        SUB_FIELD_BL (rowstyle,data_type, 90);
-        SUB_FIELD_BL (rowstyle,unit_type, 91);
-        SUB_FIELD_TU (rowstyle,format_string, 1);
-      }
-  END_REPEAT_BLOCK
-  END_REPEAT (rowstyles)
   START_OBJECT_HANDLE_STREAM;
-
 DWG_OBJECT_END
 
 //(79 + varies) pg.247 20.4.104
