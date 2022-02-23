@@ -233,17 +233,19 @@ dwg_decode (Bit_Chain *restrict dat, Dwg_Data *restrict dwg)
 
 #define WE_CAN                                                                \
   "This version of LibreDWG is only capable of decoding "                     \
-  "version r13-r2018 (code: AC1012-AC1032) DWG files.\n"
+  "version r2.0-r2018 (code: AC1.50-AC1032) DWG files.\n"
 
-  PRE (R_13)
+  PRE (R_2_0)
   {
-    LOG_ERROR (WE_CAN "We don't decode many entities and no blocks yet.")
+    LOG_ERROR (WE_CAN "We don't decode entities and no blocks yet.")
 #ifndef IS_RELEASE
-    return decode_preR13 (dat, dwg);
+    // return decode_preR_2_0 (dat, dwg);
+    return DWG_ERR_INVALIDDWG;
 #endif
   }
 
-  VERSIONS (R_13, R_2000) { return decode_R13_R2000 (dat, dwg); }
+  VERSIONS (R_2_0, R_11) { return decode_preR13 (dat, dwg); }
+  VERSIONS (R_12, R_2000) { return decode_R13_R2000 (dat, dwg); }
   VERSION (R_2004) { return decode_R2004 (dat, dwg); }
   VERSION (R_2007) { return decode_R2007 (dat, dwg); }
   SINCE (R_2010)
@@ -265,8 +267,10 @@ decode_preR13_section_ptr (const char *restrict name, Dwg_Section_Type_r11 id,
 {
   Dwg_Section *tbl = &dwg->header.section[id];
   tbl->size = bit_read_RS (dat);
-  tbl->number = bit_read_RL (dat);
-  tbl->address = bit_read_RL (dat);
+  tbl->number = bit_read_RS (dat);
+  dat->byte += 2; // ?? 80
+  tbl->address = bit_read_RS (dat);
+  dat->byte += 2; // 00 00 || ff ff
   strncpy (tbl->name, name, 63);
   tbl->name [63] = '\0';
   LOG_TRACE ("ptr table %-8s [%2d]: size:%-4u nr:%-2ld (0x%lx-0x%lx)\n",
@@ -338,8 +342,9 @@ decode_preR13_section (Dwg_Section_Type_r11 id, Bit_Chain *restrict dat,
 #define PREP_TABLE(token)                                                     \
   Dwg_Object *obj;                                                            \
   Dwg_Object_##token *_obj;                                                   \
-  if (dat->byte > dat->size || (num + i) >= dwg->num_objects)                 \
+  if (dat->byte > dat->size || (num + i) > dwg->num_objects) {                \
     return DWG_ERR_INVALIDDWG;                                                \
+  }                                                                           \
   obj = &dwg->object[num + i];                                                \
   _obj = (Dwg_Object_##token *)calloc (1, sizeof (Dwg_Object_##token));       \
   obj->tio.object                                                             \
@@ -364,7 +369,7 @@ decode_preR13_section (Dwg_Section_Type_r11 id, Bit_Chain *restrict dat,
 
 #define CHK_ENDPOS                                                            \
   pos = tbl->address + ((long)(i + 1) * tbl->size);                           \
-  if ((long)(pos - dat->byte) != 2)                                           \
+  if ((long)(pos - dat->byte) != 0)                                           \
     {                                                                         \
       LOG_ERROR ("offset %ld", pos - dat->byte);                              \
       return DWG_ERR_SECTIONNOTFOUND;                                         \
@@ -379,16 +384,23 @@ decode_preR13_section (Dwg_Section_Type_r11 id, Bit_Chain *restrict dat,
         {
           PREP_TABLE (BLOCK_HEADER);
           // TODO DXF 8: layer name
-          FIELD_RC (flag, 70);
-          FIELD_TFv (name, 32, 2);
-          FIELD_RS (used, 0);
+          FIELD_RC (flag, 70); // 1
+          FIELD_TFv (name, 32, 2); // 33
 
           // TODO RD elevation 30, 2RD base_pt 10: 24
-          FIELD_RC (block_scaling, 0);
-          FIELD_CAST (num_owned, RS, BL, 0);
-          FIELD_RC (flag2, 0);
-          FIELD_CAST (num_inserts, RS, RL, 0);
-          FIELD_RS (flag3, 0);
+          // TODO DXF 62
+          FIELD_RC (block_scaling, 0); // 34
+          FIELD_CAST (num_owned, RS, BL, 0); // 36
+          FIELD_RC (flag2, 0); // 37
+          if (tbl->size > 37)
+            FIELD_RC (unknown_38, 0); // 38
+          if (tbl->size > 38) {
+            FIELD_CAST (num_inserts, RS, RL, 0); // 40
+            FIELD_RC (flag3, 0); // 41
+            FIELD_RS (unknown_42, 0); // 43
+            FIELD_RC (unknown_44, 0); // 44
+            FIELD_RC (unknown_45, 0); // 45
+          }
           CHK_ENDPOS;
         }
       break;
@@ -398,12 +410,18 @@ decode_preR13_section (Dwg_Section_Type_r11 id, Bit_Chain *restrict dat,
         {
           PREP_TABLE (LAYER);
 
-          FIELD_CAST (flag, RC, RS, 70); // 860
-          FIELD_TFv (name, 32, 2);
-          FIELD_RS (used, 0);
+          FIELD_CAST (flag, RC, RS, 70); // 860 // 1
+          FIELD_TFv (name, 32, 2); // 33
 
-          FIELD_RS (color_rs, 62); // color, off if negative
-          FIELD_RS (ltype_rs, 6);  // style
+          FIELD_RS (color_rs, 62); // color, off if negative // 35
+          FIELD_RS (ltype_rs, 6);  // style // 37
+          if (tbl->size > 37)
+            FIELD_RC (unknown_38, 0); // 38
+          if (tbl->size > 38) {
+            FIELD_RC (unknown_39, 0); // 39
+            FIELD_RC (unknown_40, 0); // 40
+            FIELD_RC (unknown_41, 0); // 41
+          }
           // FIELD_RS (crc, 0);
           CHK_ENDPOS;
         }
@@ -415,17 +433,22 @@ decode_preR13_section (Dwg_Section_Type_r11 id, Bit_Chain *restrict dat,
         {
           PREP_TABLE (STYLE);
 
-          FIELD_RC (flag, 70);
-          FIELD_TFv (name, 32, 2);
-          FIELD_RS (used, 0);
+          FIELD_RC (flag, 70); // 1
+          FIELD_TFv (name, 32, 2); // 33
+          //FIELD_RS (used, 0);
 
-          FIELD_RD (text_size, 40); // ok
-          FIELD_RD (width_factor, 41);
-          FIELD_RD (oblique_angle, 50);
-          FIELD_RC (generation, 71);
-          FIELD_RD (last_height, 42);
-          FIELD_TFv (font_file, 64, 3);    // 8ed
-          FIELD_TFv (bigfont_file, 64, 4); // 92d
+          FIELD_RD (text_size, 40); // ok // 41
+          FIELD_RD (width_factor, 41); // 49
+          FIELD_RD (oblique_angle, 50); // 57
+          FIELD_RC (generation, 71); // 58
+          FIELD_RD (last_height, 42); // 66
+          FIELD_TFv (font_file, 64, 3);    // 8ed // 130
+          if (tbl->size > 130)
+            FIELD_TFv (bigfont_file, 64, 4); // 92d // 194
+          if (tbl->size > 194) {
+            FIELD_RS (unknown_195, 0); // 196
+            FIELD_RS (unknown_197, 0); // 198
+          }
           CHK_ENDPOS;
         }
       break;
@@ -435,16 +458,23 @@ decode_preR13_section (Dwg_Section_Type_r11 id, Bit_Chain *restrict dat,
         {
           PREP_TABLE (LTYPE);
 
-          FIELD_RC (flag, 70);
-          FIELD_TFv (name, 32, 2);
-          FIELD_RS (used, 0);
-          FIELD_TFv (description, 48, 3);
-          FIELD_RC (alignment, 72);
-          FIELD_RC (num_dashes, 73);
-          FIELD_VECTOR (dashes_r11, RD, num_dashes, 340);
+          FIELD_RC (flag, 70); // 1
+          FIELD_TFv (name, 32, 2); // 33
+          FIELD_TFv (description, 48, 3); // 81
+          FIELD_RC (alignment, 72); // 82
+          FIELD_RC (num_dashes, 73); // 83
+          //FIELD_VECTOR (dashes_r11, RD, num_dashes, 340);
+          FIELD_RD (pattern_len, 42); // 42? // 91
+          // 96 length How to do?
+          FIELD_VECTOR_N (dashes_r11, RD, 12, 340); // 187
           // ... 106 byte
           // 3, 40, 49, 74, 75, 340, 46, 50, 44, 45, 9
-
+          if (tbl->size > 187)
+            FIELD_RC (unknown_188, 0); // 188
+          if (tbl->size > 188) {
+            FIELD_RC (unknown_189, 0); // 189
+            FIELD_RS (unknown_190, 0); // 191
+          }
           CHK_ENDPOS;
         }
       break;
@@ -454,20 +484,33 @@ decode_preR13_section (Dwg_Section_Type_r11 id, Bit_Chain *restrict dat,
         {
           PREP_TABLE (VIEW);
 
-          FIELD_RC (flag, 70);
-          FIELD_TFv (name, 32, 2);
-          FIELD_RS (used, 0);
+          FIELD_RC (flag, 70); // 1
+          FIELD_TFv (name, 32, 2); // 33
 
-          FIELD_RD (VIEWSIZE, 40);
-          FIELD_2RD (VIEWCTR, 10);
-          FIELD_RD (view_width, 41);
-          FIELD_3RD (view_target, 12);
-          FIELD_3RD (VIEWDIR, 11);
-          FIELD_CAST (VIEWMODE, RS, 4BITS, 71);
-          FIELD_RD (lens_length, 42);
-          FIELD_RD (front_clip_z, 43);
-          FIELD_RD (back_clip_z, 44);
-          FIELD_RD (twist_angle, 50);
+          FIELD_RD (VIEWSIZE, 40); // 41
+          FIELD_2RD (VIEWCTR, 10); // 57
+          if (tbl->size > 57)
+            FIELD_RC (unknown_58, 0); // 58
+          if (tbl->size > 58)
+            FIELD_RD (view_width, 41); // 66
+          if (tbl->size > 66)
+            FIELD_3RD (VIEWDIR, 11); // 90
+          if (tbl->size > 90)
+            FIELD_RC (flag_3d, 0); // 91
+          if (tbl->size > 91)
+            FIELD_RC (unknown_91, 0); // 92
+          if (tbl->size > 92) {
+            FIELD_3RD (view_target, 12); // 116
+            FIELD_CAST (VIEWMODE, RC, 4BITS, 71); // 117
+            FIELD_RD (lens_length, 42); // 125
+            FIELD_RD (front_clip_z, 43); // 133
+            FIELD_RD (back_clip_z, 44); // 141
+            FIELD_RD (twist_angle, 50); // 149
+          }
+          if (tbl->size > 149) {
+            FIELD_RS (unknown1, 0); // 151
+            FIELD_RS (unknown2, 0); // 153
+          }
           CHK_ENDPOS;
         }
       break;
@@ -479,10 +522,10 @@ decode_preR13_section (Dwg_Section_Type_r11 id, Bit_Chain *restrict dat,
 
           FIELD_RC (flag, 70);
           FIELD_TFv (name, 32, 2);
-          FIELD_RS (used, 0);
-          FIELD_2RD (ucsorg, 10);
-          FIELD_2RD (ucsxdir, 11);
-          FIELD_2RD (ucsydir, 12);
+          //FIELD_RS (used, 0);
+          FIELD_3RD (ucsorg, 10);
+          FIELD_3RD (ucsxdir, 11);
+          FIELD_3RD (ucsydir, 12);
 
           CHK_ENDPOS;
         }
@@ -493,35 +536,40 @@ decode_preR13_section (Dwg_Section_Type_r11 id, Bit_Chain *restrict dat,
         {
           PREP_TABLE (VPORT);
 
-          FIELD_RC (flag, 70);
-          FIELD_TFv (name, 32, 2);
-          FIELD_RS (used, 0);
+          FIELD_RC (flag, 70); // 1
+          FIELD_TFv (name, 32, 2); // 33
 
-          FIELD_RD (VIEWSIZE, 40);
-          FIELD_RD (aspect_ratio, 41);
-          FIELD_2RD (VIEWCTR, 12);
-          FIELD_3RD (view_target, 17);
-          FIELD_3RD (VIEWDIR, 16);
-          FIELD_RD (view_twist, 50);
-          FIELD_RD (lens_length, 42);
-          FIELD_RD (front_clip_z, 43);
-          FIELD_RD (back_clip_z, 33);
-          FIELD_CAST (VIEWMODE, RS, 4BITS, 71);
+          FIELD_RD (VIEWSIZE, 40); // 41
+          FIELD_RD (aspect_ratio, 41); // 49
+          FIELD_2RD (VIEWCTR, 12); // 65
+          FIELD_3RD (view_target, 17); // 89
+          FIELD_3RD (VIEWDIR, 16); // 113
+          FIELD_RD (view_twist, 50); // 121
+          FIELD_RD (lens_length, 42); // 129
+          FIELD_RD (front_clip_z, 43); // 137
+          FIELD_RD (back_clip_z, 33); // 145
+          FIELD_CAST (VIEWMODE, RS, 4BITS, 71); // 147
 
-          FIELD_2RD (lower_left, 10);
-          FIELD_2RD (upper_right, 11);
-          FIELD_RC (UCSFOLLOW, 71);
-          FIELD_RS (circle_zoom, 72);
-          FIELD_RC (FASTZOOM, 73);
-          FIELD_RC (UCSICON, 74);
-          FIELD_RC (GRIDMODE, 76);
-          FIELD_2RD (GRIDUNIT, 15);
-          FIELD_CAST (SNAPMODE, RS, B, 70); // 75
-          FIELD_RC (SNAPSTYLE, 70);         // 77
-          FIELD_RS (SNAPISOPAIR, 78);
-          FIELD_RD (SNAPANG, 50);
-          FIELD_2RD (SNAPBASE, 13);
-          FIELD_2RD (SNAPUNIT, 14);
+          FIELD_2RD (lower_left, 10); // 163
+          FIELD_2RD (upper_right, 11); // 179
+          FIELD_RC (UCSFOLLOW, 71); // 180
+          FIELD_RS (circle_zoom, 72); // 182
+          FIELD_RC (FASTZOOM, 73); // 183
+          FIELD_RC (UCSICON, 74);  // 184
+          FIELD_RC (GRIDMODE, 76); // 185
+          FIELD_2RD (GRIDUNIT, 15); // 201
+          FIELD_CAST (SNAPMODE, RS, B, 70); // 75 // 203
+          FIELD_RC (SNAPSTYLE, 70);         // 77 // 204
+          FIELD_RS (SNAPISOPAIR, 78); // 206
+          FIELD_RD (SNAPANG, 50); // 214
+          FIELD_2RD (SNAPBASE, 13); // 230
+          FIELD_2RD (SNAPUNIT, 14); // 246
+          FIELD_RC (unknown_247, 0); // 247
+          FIELD_RS (unknown_248, 0); // 249
+          if (tbl->size > 249) {
+            FIELD_RS (unknown_250, 0); // 251
+            FIELD_RS (unknown_252, 0); // 253
+          }
           // ... 74 byte
 
           CHK_ENDPOS;
@@ -533,9 +581,10 @@ decode_preR13_section (Dwg_Section_Type_r11 id, Bit_Chain *restrict dat,
         {
           PREP_TABLE (APPID);
 
-          FIELD_RC (flag, 70);
-          FIELD_TFv (name, 32, 2);
-          FIELD_RS (used, 0);
+          FIELD_RC (flag, 70); // 1
+          FIELD_TFv (name, 32, 2); // 33
+          FIELD_RS (unknown_34, 0); // 35
+          FIELD_RS (unknown_36, 0); // 37
           CHK_ENDPOS;
         }
       break;
@@ -546,52 +595,53 @@ decode_preR13_section (Dwg_Section_Type_r11 id, Bit_Chain *restrict dat,
           // unsigned long off;
           PREP_TABLE (DIMSTYLE); // d1f
 
-          FIELD_RC (flag, 70);
-          FIELD_TFv (name, 32, 2);
+          FIELD_RC (flag, 70); // 1
+          FIELD_TFv (name, 32, 2); // 33
           // off = dat->byte;
-          FIELD_RS (used, 0);      // d40
-          FIELD_RD (DIMSCALE, 40); // d42
-          FIELD_RD (DIMASZ, 41);
-          FIELD_RD (DIMEXO, 42);
-          FIELD_RD (DIMDLI, 43);
-          FIELD_RD (DIMEXE, 44);
-          FIELD_RD (DIMRND, 45);
-          FIELD_RD (DIMDLE, 46);
-          FIELD_RD (DIMTP, 47);
-          FIELD_RD (DIMTM, 48); // ok
-          FIELD_RD (DIMTXT, 140);
-          FIELD_RD (DIMCEN, 141); // ok
-          FIELD_RD (DIMTSZ, 142);
-          FIELD_RD (DIMALTF, 143);
-          FIELD_RD (DIMLFAC, 144);
-          FIELD_RD (DIMTVP, 145); // db2
-          FIELD_RC (DIMTOL, 71);  // dba
-          FIELD_RC (DIMLIM, 72);  // dbb
-          FIELD_RC (DIMTIH, 73);
-          FIELD_RC (DIMTOH, 74);
-          FIELD_RC (DIMSE1, 75);
-          FIELD_RC (DIMSE2, 76);
-          FIELD_CAST (DIMTAD, RC, RS, 77); // ok
-          FIELD_CAST (DIMZIN, RC, BS, 78); // dc1
-          FIELD_RC (DIMALT, 170);
-          FIELD_CAST (DIMALTD, RC, BS, 171); // ok
-          FIELD_RC (DIMTOFL, 172);           // ok
-          FIELD_RC (DIMSAH, 173);            // ok
-          FIELD_RC (DIMTIX, 174);            // ok
-          FIELD_RC (DIMSOXD, 175);           // ok
-          FIELD_TFv (DIMPOST, 16, 3);         // ok dc8
-          FIELD_TFv (DIMAPOST, 16, 4);        // dd8
-          FIELD_TFv (DIMBLK_T, 16, 5);        //?? unsupported by ODA
-          FIELD_TFv (DIMBLK1_T, 16, 6);       //?? unsupported by ODA
-          FIELD_TFv (DIMBLK2_T, 66, 7);       //?? unsupported by ODA
+          FIELD_RD (DIMSCALE, 40); // d42 // 41
+          FIELD_RD (DIMASZ, 41); // 49
+          FIELD_RD (DIMEXO, 42); // 57
+          FIELD_RD (DIMDLI, 43); // 65
+          FIELD_RD (DIMEXE, 44); // 73
+          FIELD_RD (DIMRND, 45); // 81
+          FIELD_RD (DIMDLE, 46); // 89
+          FIELD_RD (DIMTP, 47); // 97
+          FIELD_RD (DIMTM, 48); // ok // 105
+          FIELD_RD (DIMTXT, 140); // 113
+          FIELD_RD (DIMCEN, 141); // ok // 121
+          FIELD_RD (DIMTSZ, 142); // 129
+          FIELD_RD (DIMALTF, 143); // 137
+          FIELD_RD (DIMLFAC, 144); // 145
+          FIELD_RD (DIMTVP, 145); // db2 // 153
+          FIELD_RC (DIMTOL, 71);  // dba // 154
+          FIELD_RC (DIMLIM, 72);  // dbb // 155
+          FIELD_RC (DIMTIH, 73); // 156
+          FIELD_RC (DIMTOH, 74); // 157
+          FIELD_RC (DIMSE1, 75); // 158
+          FIELD_RC (DIMSE2, 76); // 159
+          FIELD_CAST (DIMTAD, RC, RS, 77); // ok // 160
+          FIELD_CAST (DIMZIN, RC, BS, 78); // dc1 // 161
+          FIELD_RC (DIMALT, 170); // 162
+          FIELD_CAST (DIMALTD, RC, BS, 171); // ok // 163
+          FIELD_RC (DIMTOFL, 172);           // ok // 164
+          FIELD_RC (DIMSAH, 173);            // ok // 165
+          FIELD_RC (DIMTIX, 174);            // ok // 166
+          FIELD_RC (DIMSOXD, 175);           // ok // 167
+          FIELD_TFv (DIMPOST, 16, 3);         // ok dc8 // 183
+          FIELD_TFv (DIMAPOST, 16, 4);        // dd8 // 199
+          FIELD_TFv (DIMBLK_T, 16, 5);        //?? unsupported by ODA // 215
+          FIELD_TFv (DIMBLK1_T, 16, 6);       //?? unsupported by ODA // 231
+          FIELD_TFv (DIMBLK2_T, 66, 7);       //?? unsupported by ODA // 297
           // DEBUG_HERE; //e18
           // dat->byte += 50; //unknown: DIMSHO, DIMASO (global)
-          FIELD_RS (DIMCLRD_N, 176); // e4a
-          FIELD_RS (DIMCLRE_N, 177);
-          FIELD_RS (DIMCLRT_N, 178); // e4e
-          FIELD_RC (DIMUPT, 0);      //??
-          FIELD_RD (DIMTFAC, 146);   // e51
-          FIELD_RD (DIMGAP, 147);    // e59
+          FIELD_RS (DIMCLRD_N, 176); // e4a // 299
+          FIELD_RS (DIMCLRE_N, 177); // 301
+          FIELD_RS (DIMCLRT_N, 178); // e4e // 303
+          FIELD_RC (DIMUPT, 0);      //?? // 304
+          FIELD_RD (DIMTFAC, 146);   // e51 // 312
+          FIELD_RD (DIMGAP, 147);    // e59 // 320
+          FIELD_RS (unknown_321, 0); // 322
+          FIELD_RS (unknown_323, 0); // 324
           CHK_ENDPOS;                //-e63
         }
       break;
@@ -629,7 +679,7 @@ decode_entity_preR13 (Bit_Chain *restrict dat, Dwg_Object *restrict obj,
   LOG_TRACE ("flag_r11: " FORMAT_RC "\n", _obj->flag_r11);
   FIELD_RS (layer_r11, 8);
   FIELD_RS (opts_r11, 0);
-  // LOG_TRACE("Layer: %d, Opts: 0x%x\n", ent->layer_r11, ent->opts_r11)
+  LOG_TRACE("Layer: %d, Opts: 0x%x\n", ent->layer_r11, ent->opts_r11)
   if (ent->flag_r11 & 1)
     {
       FIELD_RC (color_r11, 0);
@@ -728,6 +778,7 @@ decode_preR13 (Bit_Chain *restrict dat, Dwg_Data *restrict dwg)
   }
   LOG_TRACE ("@0x%lx\n", dat->byte); // 0x23a
 
+  if (dwg->header.num_header_vars > 129) {
   dat->byte = 0x3ef;
   LOG_TRACE ("@0x%lx\n", dat->byte);
   decode_preR13_section_ptr ("UCS", SECTION_UCS, dat, dwg);
@@ -735,10 +786,14 @@ decode_preR13 (Bit_Chain *restrict dat, Dwg_Data *restrict dwg)
   dat->byte = 0x500;
   LOG_TRACE ("@0x%lx\n", dat->byte); // 0x23a
   decode_preR13_section_ptr ("VPORT", SECTION_VPORT, dat, dwg);
+  }
+  if (dwg->header.num_header_vars > 158) {
   rl1 = bit_read_RL (dat);
   rl2 = bit_read_RL (dat);
   LOG_TRACE ("?2 long: 0x%x 0x%x\n", rl1, rl2);
   decode_preR13_section_ptr ("APPID", SECTION_APPID, dat, dwg);
+  }
+  if (dwg->header.num_header_vars > 160) {
   rl1 = bit_read_RL (dat);
   rs2 = bit_read_RS (dat);
   LOG_TRACE ("?long+short: 0x%x 0x%x\n", rl1, (unsigned)rs2);
@@ -747,22 +802,31 @@ decode_preR13 (Bit_Chain *restrict dat, Dwg_Data *restrict dwg)
   dat->byte = 0x69f;
   decode_preR13_section_ptr ("VX", SECTION_VX, dat, dwg);
   dat->byte += 38;
+  }
   // entities
   error |= decode_preR13_entities (entities_start, entities_end, 0, dat, dwg);
   if (error >= DWG_ERR_CRITICAL)
     return error;
+  if (dwg->header.num_header_vars > 160) {
   dat->byte += 19; /* crc + sentinel? */
+  }
   error |= decode_preR13_section (SECTION_BLOCK, dat, dwg);
   error |= decode_preR13_section (SECTION_LAYER, dat, dwg);
   error |= decode_preR13_section (SECTION_STYLE, dat, dwg);
   error |= decode_preR13_section (SECTION_LTYPE, dat, dwg);
   error |= decode_preR13_section (SECTION_VIEW, dat, dwg);
 
+  if (dwg->header.num_header_vars > 129) {
   error |= decode_preR13_section (SECTION_UCS, dat, dwg);
   error |= decode_preR13_section (SECTION_VPORT, dat, dwg);
+  }
+  if (dwg->header.num_header_vars > 158) {
   error |= decode_preR13_section (SECTION_APPID, dat, dwg);
+  }
+  if (dwg->header.num_header_vars > 160) {
   error |= decode_preR13_section (SECTION_DIMSTYLE, dat, dwg);
   error |= decode_preR13_section (SECTION_VX, dat, dwg);
+  }
   if (error >= DWG_ERR_CRITICAL)
     return error;
   // blocks
@@ -818,6 +882,8 @@ decode_preR13 (Bit_Chain *restrict dat, Dwg_Data *restrict dwg)
 
   dat->byte = blocks_end + 36 + 4 * 4 + 12;
   LOG_TRACE ("@0x%lx\n", dat->byte);
+ 
+  if (dwg->header.num_header_vars > 160) {
   decode_preR13_section_chk (SECTION_BLOCK, dat, dwg);
   decode_preR13_section_chk (SECTION_LAYER, dat, dwg);
   decode_preR13_section_chk (SECTION_STYLE, dat, dwg);
@@ -830,6 +896,7 @@ decode_preR13 (Bit_Chain *restrict dat, Dwg_Data *restrict dwg)
   decode_preR13_section_chk (SECTION_VX, dat, dwg);
   rl1 = bit_read_RL (dat);
   LOG_TRACE ("long 0x%x\n", rl1); // address
+  }
 
   return 0;
 }
@@ -5291,6 +5358,10 @@ decode_preR13_entities (unsigned long start, unsigned long end,
   dat->bit = 0;
   LOG_TRACE ("entities: (0x%lx-0x%lx, offset 0x%lx) TODO\n", start, end,
              offset)
+  if (start == end) {
+    LOG_TRACE ("No entities\n");
+    return error;
+  }
   while (dat->byte < end)
     {
       Dwg_Object *obj;
@@ -5314,8 +5385,8 @@ decode_preR13_entities (unsigned long start, unsigned long end,
       obj->index = num;
       obj->parent = dwg;
       obj->address = dat->byte;
-
-      DEBUG_HERE;
+      obj->type = bit_read_RC (dat);
+      dat->byte = obj->address;
 
       switch (obj->type)
         {
@@ -5330,6 +5401,12 @@ decode_preR13_entities (unsigned long start, unsigned long end,
           break;
         case 4:
           error |= dwg_decode_SHAPE (dat, obj);
+          break;
+        case 5:
+          error |= dwg_decode_REPEAT (dat, obj);
+          break;
+        case 6:
+          error |= dwg_decode_ENDREP (dat, obj);
           break;
         case 7:
           error |= dwg_decode_TEXT (dat, obj);
@@ -5367,6 +5444,9 @@ decode_preR13_entities (unsigned long start, unsigned long end,
         case 20:
           error |= dwg_decode_VERTEX_2D (dat, obj);
           break;
+        case 21:
+          error |= dwg_decode__3DLINE (dat, obj);
+          break;
         case 22:
           error |= dwg_decode__3DFACE (dat, obj);
           break;
@@ -5387,13 +5467,13 @@ decode_preR13_entities (unsigned long start, unsigned long end,
           break;
         }
 
-      bit_set_position (dat, obj->address + obj->size - 2);
-      crc = bit_read_RS (dat);
-      LOG_TRACE ("crc: %04X [RSx]\n", crc);
+//      bit_set_position (dat, obj->address + obj->size - 2);
+//      crc = bit_read_RS (dat);
+//      LOG_TRACE ("crc: %04X [RSx]\n", crc);
       num++;
 
-      if (obj->size < 2 || obj->size > 0x1000) // FIXME
-        dat->byte = end;
+//      if (obj->size < 2 || obj->size > 0x1000) // FIXME
+//        dat->byte = end;
     }
 
   dat->byte = end;

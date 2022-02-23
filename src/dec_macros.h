@@ -982,7 +982,7 @@
 #define FIELD_VECTOR_N(name, type, size, dxf)                                 \
   if (size > 0)                                                               \
     {                                                                         \
-      VECTOR_CHKCOUNT (name, type, size, dat)                                 \
+      /*VECTOR_CHKCOUNT (name, type, size, dat)                             */\
       _obj->name = (BITCODE_##type *)calloc (size, sizeof (BITCODE_##type));  \
       for (vcount = 0; vcount < (BITCODE_BL)size; vcount++)                   \
         {                                                                     \
@@ -1539,6 +1539,8 @@
     {                                                                         \
       unsigned long pos = obj_stream_position (dat, hdl_dat, str_dat);        \
       int64_t padding = (obj->size * 8) - pos;                                \
+      LOG_HANDLE (" obj->size: %+ld\n", (long) obj->size);                    \
+      LOG_HANDLE (" pos: %+ld\n", (long) pos);                                \
       bit_set_position (dat, pos);                                            \
       if (padding)                                                            \
         LOG_HANDLE (" padding: %+ld %s\n", (long)padding,                     \

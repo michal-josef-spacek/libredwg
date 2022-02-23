@@ -36,10 +36,19 @@ DWG_ENTITY (TEXT)
       FIELD_RD (width_factor, 41);
     if (R11OPTS (4))
       FIELD_RD (oblique_angle, 51);
+    /* TODO style index? */
     if (R11OPTS (8)) {
-      DECODER { _ent->ltype_r11 = bit_read_RC (dat); }
-      ENCODER { bit_write_RC (dat, _ent->ltype_r11); }
-      PRINT   { LOG_TRACE ("ltype_r11: " FORMAT_RS "\n", _ent->ltype_r11); }
+      FIELD_VALUE (style) = (BITCODE_H)calloc(1, sizeof(Dwg_Object_Ref));
+      FIELD_VALUE (style)->absolute_ref = bit_read_RC (dat);
+      /* DECODER { _ent->ltype_r11 = bit_read_RC (dat); } */
+/*      DECODER {
+        _ent->style = (BITCODE_H)calloc(1, sizeof(Dwg_Object_Ref));
+        _ent->style->absolute_ref = bit_read_RC (dat);
+        LOG_TRACE ("style: %lX [RC 7]\n", _ent->style->absolute_ref)
+      } */
+      /*ENCODER { bit_write_RC (dat, _ent->ltype_r11); } */
+      /*PRINT   { LOG_TRACE ("ltype_r11: " FORMAT_RS "\n", _ent->ltype_r11); }*/
+      PRINT { LOG_TRACE ("style: %lX [RC 7]\n", FIELD_VALUE (style)->absolute_ref); }
     }
     if (R11OPTS (16))
       FIELD_CAST (generation, RC, BS, 71);
@@ -47,6 +56,7 @@ DWG_ENTITY (TEXT)
       FIELD_CAST (horiz_alignment, RC, BS, 72);
     if (R11OPTS (64))
       FIELD_2RD (alignment_pt, 11);
+    /* TODO 128? */
     if (R11OPTS (256))
       FIELD_CAST (vert_alignment, RC, BS, 73);
   }
@@ -518,7 +528,7 @@ DWG_ENTITY (ENDBLK)
 
 DWG_ENTITY_END
 
-/* (6) */
+/* (6/17) */
 DWG_ENTITY (SEQEND)
 
   //SUBCLASS (AcDbSequenceEnd) //unused
@@ -802,10 +812,8 @@ DWG_ENTITY (MINSERT)
 
 DWG_ENTITY_END
 
-/*
-// 9 was TRACE. r10-r11 only
-// maybe type 25
-DWG_ENTITY (3DLINE)
+/* (none/21) R10-R11 only */
+DWG_ENTITY (_3DLINE)
 
   VERSIONS (R_10, R_11) {
     FIELD_3RD (start, 10)
@@ -819,7 +827,6 @@ DWG_ENTITY (3DLINE)
   COMMON_ENTITY_HANDLE_DATA;
 
 DWG_ENTITY_END
-*/
 
 /* (10/20) */
 DWG_ENTITY (VERTEX_2D)
@@ -905,7 +912,7 @@ DWG_ENTITY (VERTEX_2D)
 
 DWG_ENTITY_END
 
-/*(11)*/
+/* (11) */
 DWG_ENTITY (VERTEX_3D)
 
   SUBCLASS (AcDbVertex)
@@ -918,7 +925,7 @@ DWG_ENTITY (VERTEX_3D)
 
 DWG_ENTITY_END
 
-/*(12)*/
+/* (12) */
 DWG_ENTITY (VERTEX_MESH)
 
   SUBCLASS (AcDbVertex)
@@ -931,7 +938,7 @@ DWG_ENTITY (VERTEX_MESH)
 
 DWG_ENTITY_END
 
-/*(13)*/
+/* (13) */
 DWG_ENTITY (VERTEX_PFACE)
 
   SUBCLASS (AcDbVertex)
@@ -944,7 +951,7 @@ DWG_ENTITY (VERTEX_PFACE)
 
 DWG_ENTITY_END
 
-/*(14)*/
+/* (14) */
 DWG_ENTITY (VERTEX_PFACE_FACE)
 
   SUBCLASS (AcDbFaceRecord)
@@ -976,7 +983,7 @@ DWG_ENTITY (VERTEX_PFACE_FACE)
   COMMON_ENTITY_HANDLE_DATA;
 DWG_ENTITY_END
 
-/*(15)*/
+/* (15/18) */
 DWG_ENTITY (POLYLINE_2D)
 
   //SUBCLASS (AcDbCurve)
@@ -1043,7 +1050,7 @@ DWG_ENTITY (POLYLINE_2D)
 
 DWG_ENTITY_END
 
-/*(16)*/
+/* (16/19) */
 DWG_ENTITY (POLYLINE_3D)
 
   SUBCLASS (AcDb3dPolyline)
@@ -1283,7 +1290,7 @@ DWG_ENTITY_END
     }
 #endif
 
-/*(20)*/
+/* (20) */
 DWG_ENTITY (DIMENSION_ORDINATE)
 
   COMMON_ENTITY_DIMENSION
@@ -1336,7 +1343,7 @@ DWG_ENTITY (DIMENSION_LINEAR)
 
 DWG_ENTITY_END
 
-/*(22)*/
+/* (22) */
 DWG_ENTITY (DIMENSION_ALIGNED)
 
   COMMON_ENTITY_DIMENSION
@@ -1358,7 +1365,7 @@ DWG_ENTITY (DIMENSION_ALIGNED)
 
 DWG_ENTITY_END
 
-/*(23)*/
+/* (23) */
 DWG_ENTITY (DIMENSION_ANG3PT)
 
   COMMON_ENTITY_DIMENSION
@@ -1375,7 +1382,7 @@ DWG_ENTITY (DIMENSION_ANG3PT)
 
 DWG_ENTITY_END
 
-/*(24)*/
+/* (24) */
 DWG_ENTITY (DIMENSION_ANG2LN)
 
   COMMON_ENTITY_DIMENSION
@@ -1394,7 +1401,7 @@ DWG_ENTITY (DIMENSION_ANG2LN)
 
 DWG_ENTITY_END
 
-/*(25)*/
+/* (25) */
 DWG_ENTITY (DIMENSION_RADIUS)
 
   COMMON_ENTITY_DIMENSION
@@ -1410,7 +1417,7 @@ DWG_ENTITY (DIMENSION_RADIUS)
 
 DWG_ENTITY_END
 
-/*(26)*/
+/* (26) */
 DWG_ENTITY (DIMENSION_DIAMETER)
 
   COMMON_ENTITY_DIMENSION
@@ -1511,7 +1518,7 @@ DWG_ENTITY (_3DFACE)
 
 DWG_ENTITY_END
 
-/*(29)*/
+/* (29) */
 DWG_ENTITY (POLYLINE_PFACE)
 
   SUBCLASS (AcDbPolyFaceMesh)
@@ -1545,7 +1552,7 @@ DWG_ENTITY (POLYLINE_PFACE)
 
 DWG_ENTITY_END
 
-/*(30)*/
+/* (30) */
 DWG_ENTITY (POLYLINE_MESH)
 
   SUBCLASS (AcDbPolygonMesh)
@@ -1829,7 +1836,7 @@ DWG_ENTITY (VIEWPORT)
 
 DWG_ENTITY_END
 
-/*(35)*/
+/* (35) */
 DWG_ENTITY (ELLIPSE)
 
   //SUBCLASS (AcDbCurve)
@@ -1845,7 +1852,7 @@ DWG_ENTITY (ELLIPSE)
 
 DWG_ENTITY_END
 
-/*(36)*/
+/* (36) */
 DWG_ENTITY (SPLINE)
 
   //SUBCLASS (AcDbCurve)
@@ -2364,22 +2371,22 @@ static int free_3dsolid (Dwg_Object *restrict obj, Dwg_Entity_3DSOLID *restrict 
   FREE_3DSOLID \
   COMMON_3DSOLID
 
-/*(37)*/
+/* (37) */
 DWG_ENTITY (REGION)
   ACTION_3DSOLID;
 DWG_ENTITY_END
 
-/*(38)*/
+/* (38) */
 DWG_ENTITY (_3DSOLID)
   ACTION_3DSOLID;
 DWG_ENTITY_END
 
-/*(39)*/
+/* (39) */
 DWG_ENTITY (BODY)
   ACTION_3DSOLID;
 DWG_ENTITY_END
 
-/*(40) r13+ only */
+/* (40) r13+ only */
 DWG_ENTITY (RAY)
   SUBCLASS (AcDbRay)
   FIELD_3BD (point, 10);
@@ -2387,7 +2394,7 @@ DWG_ENTITY (RAY)
   COMMON_ENTITY_HANDLE_DATA;
 DWG_ENTITY_END
 
-/*(41) r13+ only*/
+/* (41) r13+ only */
 DWG_ENTITY (XLINE)
   SUBCLASS (AcDbXline)
   FIELD_3BD (point, 10);
@@ -2395,7 +2402,7 @@ DWG_ENTITY (XLINE)
   COMMON_ENTITY_HANDLE_DATA;
 DWG_ENTITY_END
 
-/*(42)*/
+/* (42) */
 DWG_OBJECT (DICTIONARY)
 
 #ifdef IS_DXF
@@ -2580,7 +2587,7 @@ DWG_ENTITY (OLEFRAME)
 
 DWG_ENTITY_END
 
-/*(44)*/
+/* (44) */
 DWG_ENTITY (MTEXT)
 
   SUBCLASS (AcDbMText)
@@ -2743,7 +2750,7 @@ DWG_ENTITY (LEADER)
 
 DWG_ENTITY_END
 
-/*(46)*/
+/* (46) */
 DWG_ENTITY (TOLERANCE)
 
   SUBCLASS (AcDbFcf)   // for Feature Control Frames
@@ -2766,7 +2773,7 @@ DWG_ENTITY (TOLERANCE)
 
 DWG_ENTITY_END
 
-/*(47)*/
+/* (47) */
 DWG_ENTITY (MLINE)
 
   SUBCLASS (AcDbMline)
@@ -2809,7 +2816,7 @@ DWG_ENTITY (MLINE)
 
 DWG_ENTITY_END
 
-/*(48)*/
+/* (48) */
 DWG_OBJECT (BLOCK_CONTROL)
 
   FIELD_BL (num_entries, 70);
@@ -2939,7 +2946,7 @@ DWG_OBJECT (BLOCK_HEADER)
 
 DWG_OBJECT_END
 
-/*(50)*/
+/* (50) */
 DWG_OBJECT (LAYER_CONTROL)
 
   FIELD_BL (num_entries, 70);
@@ -3119,7 +3126,7 @@ DWG_OBJECT_END
 //(54): Unknown
 //(55): Unknown
 
-/*(56)*/
+/* (56) */
 DWG_OBJECT (LTYPE_CONTROL)
 
   FIELD_BS (num_entries, 70);
@@ -3237,10 +3244,10 @@ DWG_OBJECT (LTYPE)
   START_OBJECT_HANDLE_STREAM;
 DWG_OBJECT_END
 
-//(58): Unknown
-//(59): Unknown
+// (58) : Unknown
+// (59) : Unknown
 
-/*(60)*/
+/* (60) */
 DWG_OBJECT (VIEW_CONTROL)
 
   FIELD_BL (num_entries, 70);
@@ -3352,7 +3359,7 @@ DWG_OBJECT (VIEW)
 
 DWG_OBJECT_END
 
-/*(62)*/
+/* (62) */
 DWG_OBJECT (UCS_CONTROL)
 
   FIELD_BS (num_entries, 70); //BS or BL?
@@ -3602,7 +3609,7 @@ DWG_OBJECT (VPORT)
 
 DWG_OBJECT_END
 
-/*(66)*/
+/* (66) */
 DWG_OBJECT (APPID_CONTROL)
 
   FIELD_BS (num_entries, 70);
@@ -3625,7 +3632,7 @@ DWG_OBJECT (APPID)
   START_OBJECT_HANDLE_STREAM;
 DWG_OBJECT_END
 
-/*(68)*/
+/* (68) */
 DWG_OBJECT (DIMSTYLE_CONTROL)
 
   FIELD_BS (num_entries, 70);
@@ -3947,7 +3954,7 @@ DWG_OBJECT (VX_TABLE_RECORD)
 
 DWG_OBJECT_END
 
-/*(72)*/
+/* (72) */
 DWG_OBJECT (GROUP)
 
   SUBCLASS (AcDbGroup)
@@ -10598,6 +10605,24 @@ DWG_ENTITY (POINTCLOUDEX)
   END_REPEAT_BLOCK
   END_REPEAT (croppings)
   COMMON_ENTITY_HANDLE_DATA;
+DWG_ENTITY_END
+
+/* (none/5) pre r2.1 only */
+DWG_ENTITY (REPEAT)
+
+  COMMON_ENTITY_HANDLE_DATA;
+
+DWG_ENTITY_END
+
+/* (none/6) pre r2.1 only */
+DWG_ENTITY (ENDREP)
+
+  FIELD_RS (columns, 70);
+  FIELD_RS (rows, 71);
+  FIELD_2RD (start, 40);
+
+  COMMON_ENTITY_HANDLE_DATA;
+
 DWG_ENTITY_END
 
 DWG_OBJECT (POINTCLOUDDEF)
