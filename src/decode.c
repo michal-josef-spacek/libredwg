@@ -779,7 +779,11 @@ decode_preR13 (Bit_Chain *restrict dat, Dwg_Data *restrict dwg)
   if (error >= DWG_ERR_CRITICAL)
       return error;
 
-  num_entities = dwg->header_vars.num_entities;
+  PRE (R_10) {
+    num_entities = dwg->header_vars.num_entities;
+  } else {
+    num_entities = 0;
+  }
   PRE (R_2_0b) {
     entities_start = dat->byte;
     entities_end = dwg->header_vars.num_bytes;
@@ -812,7 +816,8 @@ decode_preR13 (Bit_Chain *restrict dat, Dwg_Data *restrict dwg)
       LOG_WARN ("@0x%lx => entities_start 0x%x", dat->byte, entities_start);
       dat->byte = entities_start;
     }
-  error |= decode_preR13_entities (entities_start, entities_end, num_entities, 0, 0, dat, dwg);
+  error |= decode_preR13_entities (entities_start, entities_end, num_entities,
+                                   entities_end - entities_start, 0, dat, dwg);
   if (error >= DWG_ERR_CRITICAL)
     return error;
   if (dat->byte != entities_end)
@@ -851,10 +856,11 @@ decode_preR13 (Bit_Chain *restrict dat, Dwg_Data *restrict dwg)
       LOG_WARN ("@0x%lx => blocks_start 0x%x", dat->byte, blocks_start);
       dat->byte = blocks_start;
     }
-  // don't just decode the num_blocks (i.e. 1 the BLOCK ent),
-  // but the num_entities minus the already decoded entities.
-  //if (dwg->header.section[SECTION_BLOCK].number)
-  num_entities -= dwg->num_entities; // minus the already decoded modelspace ents
+  // this is number of block entities, not count of blocks.
+  num_entities = 0;
+  if (R_11) {
+    blocks_end -= 32; // crc size
+  }
   error |= decode_preR13_entities (blocks_start, blocks_end,
                                    num_entities, blocks_size & 0x3FFFFFFF,
                                    blocks_max, dat, dwg);
@@ -5432,9 +5438,7 @@ decode_preR13_entities (BITCODE_RL start, BITCODE_RL end,
     return 0;
   if (end == 0 && size == 0) // empty blocks
     return 0;
-  if (end != 0 && size != 0 && num_entities == 0) // num_entities is wrong
-    num_entities = dwg->num_entities;
-  for (unsigned i = 0; i < num_entities; i++)
+  while (dat->byte < oldpos + end)
     {
       Dwg_Object *obj;
       Dwg_Object_Entity *ent, *_ent;
