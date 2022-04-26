@@ -903,6 +903,10 @@ json_FILEHEADER (Bit_Chain *restrict dat, Dwg_Data *restrict dwg,
       // clang-format off
       FIELD_RC (is_maint, 0)
       FIELD_RC (zero_one_or_three, 0)
+      // preR13 only
+      FIELD_RC (unknown_3, 0)
+      FIELD_RS (numheader_vars, 0)
+      FIELD_RS (numsections, 0)
       FIELD_RL (thumbnail_address, 0) //@0x0d
       FIELD_RC (dwg_version, 0)
       FIELD_RC (maint_version, 0)
@@ -2581,7 +2585,7 @@ json_OBJECTS (Bit_Chain *restrict dat, Dwg_Data *restrict dwg,
       if (i > 0)
         {
           Dwg_Object *oldobj = &dwg->object[i - 1];
-          if (!oldobj->handle.value)
+          if (dwg->header.version >= R_13 && !oldobj->handle.value)
             {
               LOG_ERROR ("Required %s.handle missing, skipped", oldobj->name)
               dwg_free_object (obj);
@@ -2855,7 +2859,7 @@ json_OBJECTS (Bit_Chain *restrict dat, Dwg_Data *restrict dwg,
             {
               obj->size = json_long (dat, tokens);
               JSON_TOKENS_CHECK_OVERFLOW(goto harderr)
-              if (!obj->handle.value)
+              if (dwg->header.version >= R_13 && !obj->handle.value)
                 {
                   LOG_ERROR ("Required %s.handle missing", name);
                   goto harderr;
