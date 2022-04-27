@@ -1,7 +1,7 @@
 /*****************************************************************************/
 /*  LibreDWG - free implementation of the DWG file format                    */
 /*                                                                           */
-/*  Copyright (C) 2020-2021 Free Software Foundation, Inc.                   */
+/*  Copyright (C) 2020-2022 Free Software Foundation, Inc.                   */
 /*                                                                           */
 /*  This library is free software, licensed under the terms of the GNU       */
 /*  General Public License as published by the Free Software Foundation,     */
@@ -1569,7 +1569,9 @@ json_xdata (Bit_Chain *restrict dat, Dwg_Data *restrict dwg,
             case DWG_VT_OBJECTID:
               {
                 BITCODE_H hdl;
-                hdl = json_HANDLE (dat, dwg, tokens, name, key, NULL, -1);
+                hdl = json_HANDLE (dat, dwg, tokens, name, "handle", NULL, -1);
+                LOG_TRACE ("xdata[%u]: " FORMAT_REF " [H %d]\n", i, ARGS_REF (hdl),
+                           (int)rbuf->type);
                 JSON_TOKENS_CHECK_OVERFLOW_ERR
                 memcpy (&rbuf->value.h, &hdl->handleref,
                         sizeof (hdl->handleref));
@@ -2569,6 +2571,11 @@ json_OBJECTS (Bit_Chain *restrict dat, Dwg_Data *restrict dwg,
       LOG_ERROR ("Out of memory");
       return DWG_ERR_OUTOFMEM;
     }
+  if (dwg->header.version < R_13)
+    {
+      // 5 plus the header, plus a hole
+      dwg->header.section = calloc (7, sizeof (Dwg_Section));
+    }
   dwg->num_objects += size;
   for (i = 0; i < size; i++)
     {
@@ -2631,7 +2638,7 @@ json_OBJECTS (Bit_Chain *restrict dat, Dwg_Data *restrict dwg,
           JSON_TOKENS_CHECK_OVERFLOW(goto typeerr)
         }
       keys = t->size;
-      LOG_HANDLE ("\n-keys: %d\n", keys);
+      LOG_HANDLE ("\n-keys: %d, object %d of %d\n", keys, i, size);
 
       tokens->index++;
       for (int j = 0; j < keys; j++)
@@ -2698,8 +2705,7 @@ json_OBJECTS (Bit_Chain *restrict dat, Dwg_Data *restrict dwg,
                   goto skip_object;
                 }
               */
-              LOG_TRACE ("\nnew object %s [%d] (size: %d)\n", name, i,
-                         objsize);
+              LOG_TRACE ("\nnew object %s [%d] (size: %d)\n", name, i, objsize);
               obj->tio.object = (Dwg_Object_Object*)calloc (1, sizeof (Dwg_Object_Object));
               obj->tio.object->dwg = dwg;
               obj->tio.object->objid = i;
@@ -2851,7 +2857,21 @@ json_OBJECTS (Bit_Chain *restrict dat, Dwg_Data *restrict dwg,
                     }
                 }
               LOG_TRACE ("type: %d,\tfixedtype: %d\n", obj->type,
-                         obj->fixedtype)
+                         obj->fixedtype);
+              if (dwg->header.version < R_13 && dwg_obj_is_table (obj))
+                {
+                  Dwg_Section_Type_r11 id;
+                  switch (obj->fixedtype)
+                    {
+                    case DWG_TYPE_BLOCK_HEADER: id = SECTION_BLOCK; break;
+                    case DWG_TYPE_LAYER: id = SECTION_LAYER; break;
+                    case DWG_TYPE_STYLE: id = SECTION_STYLE; break;
+                    case DWG_TYPE_LTYPE: id = SECTION_LTYPE; break;
+                    case DWG_TYPE_VIEW:  id = SECTION_VIEW; break;
+                    default: assert (!obj->fixedtype);
+                    }
+                  dwg->header.section[id].number++;
+                }
             }
           // Note: also _obj->size
           else if (strEQc (key, "size") && !obj->size
