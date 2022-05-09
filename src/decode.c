@@ -5602,9 +5602,25 @@ void dxf_3dsolid_revisionguid (Dwg_Entity_3DSOLID *_obj)
 int decode_preR13_DIMENSION (Bit_Chain *restrict dat, Dwg_Object *restrict obj)
 {
   int error = 0;
-  BITCODE_RC flag_r11 = bit_read_RC (dat);
-  dat->byte--;
-  switch (flag_r11 & 63)
+  BITCODE_RC flag1;
+  BITCODE_RS opts_r11;
+
+  /* Read opts_r11 flag */
+  dat->byte += 5;
+  opts_r11 = bit_read_RS_LE (dat);
+  LOG_TRACE ("opts_r11: " FORMAT_RSx " [RSx %d]\n", opts_r11, 0);
+
+  /* Read dimension type flag */
+  if (! (opts_r11 & 512)) { // dimension type not present
+    flag1 = 0;
+    dat->byte -= 7;
+  } else {                  // dimension type present
+    dat->byte += 34;
+    flag1 = bit_read_RC (dat);
+    dat->byte -= 42;
+  }
+
+  switch (flag1 & 15)
     {
     case 0:
       error |= dwg_decode_DIMENSION_LINEAR (dat, obj);
@@ -5615,20 +5631,20 @@ int decode_preR13_DIMENSION (Bit_Chain *restrict dat, Dwg_Object *restrict obj)
     case 2:
       error |= dwg_decode_DIMENSION_ANG2LN (dat, obj);
       break;
-    case 4:
+    case 3:
       error |= dwg_decode_DIMENSION_DIAMETER (dat, obj);
       break;
-    case 8:
+    case 4:
       error |= dwg_decode_DIMENSION_RADIUS (dat, obj);
       break;
-    case 16:
+    case 5:
       error |= dwg_decode_DIMENSION_ANG3PT (dat, obj);
       break;
-    case 32:
+    case 6:
       error |= dwg_decode_DIMENSION_ORDINATE (dat, obj);
       break;
     default:
-      LOG_ERROR ("Unknown preR13 DIMENSION type %u", flag_r11 & 63);
+      LOG_ERROR ("Unknown preR13 DIMENSION type %u", flag1 & 15);
       error |= DWG_ERR_VALUEOUTOFBOUNDS;
     }
   return error;

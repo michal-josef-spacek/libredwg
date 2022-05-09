@@ -1399,8 +1399,6 @@ DWG_ENTITY_END
     {                                                                         \
       FIELD_HANDLE (block, 2, 2);                                             \
       FIELD_2RD (def_pt, 10);                                                 \
-      if (R11OPTS (FLAG_R11_ELEVATION))                                       \
-        FIELD_RD (elevation, 38);                                             \
       FIELD_2RD (text_midpt, 11);                                             \
       if (R11OPTS (2))                                                        \
         FIELD_RC (flag1, 0);                                                  \
@@ -1546,16 +1544,20 @@ DWG_ENTITY (DIMENSION_LINEAR)
   COMMON_ENTITY_DIMENSION
   SUBCLASS (AcDbAlignedDimension)
   PRE (R_13) {
-    FIELD_2RD (xline1_pt, 13);
-    FIELD_2RD (xline2_pt, 14);
+    if (R11OPTS (8))
+      FIELD_2RD (xline1_pt, 13);
+    if (R11OPTS (16))
+      FIELD_2RD (xline2_pt, 14);
   } LATER_VERSIONS {
     FIELD_3BD (xline1_pt, 13);
     FIELD_3BD (xline2_pt, 14);
     FIELD_3BD (def_pt, 0);
   }
   UNTIL (R_12) {
-    FIELD_RD (dim_rotation, 50);
-    FIELD_RD (oblique_angle, 52); // ext_line_rotation
+    if (R11OPTS (256))
+      FIELD_RD (dim_rotation, 50);
+    if (R11OPTS (512)) // TODO
+      FIELD_RD (oblique_angle, 52); // ext_line_rotation
   } LATER_VERSIONS {
     FIELD_BD (oblique_angle, 0);
     FIELD_BD0 (dim_rotation, 50);
