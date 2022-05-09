@@ -1504,13 +1504,19 @@ DWG_ENTITY (DIMENSION_ORDINATE)
   PRE (R_13) {
     //FIELD_2RD (def_pt, 0);
     if (R11OPTS (8)) {
-      FIELD_2RD (feature_location_pt, 13);
-      if (R11OPTS (FLAG_R11_ELEVATION))
-        FIELD_RD (feature_location_pt.z, 33);
+      if (R11OPTS (FLAG_R11_ELEVATION)) {
+        FIELD_3RD (feature_location_pt, 13);
+      }
+      else {
+        FIELD_2RD (feature_location_pt, 13);
+      }
     }
-    FIELD_2RD (leader_endpt, 14);
-    if (R11OPTS (FLAG_R11_ELEVATION))
-      FIELD_RD (leader_endpt.z, 34);
+    if (R11OPTS (FLAG_R11_ELEVATION)) {
+      FIELD_3RD (leader_endpt, 14);
+    }
+    else {
+      FIELD_2RD (leader_endpt, 14);
+    }
     FIELD_RC (flag2, 0);
   } else {
     //FIELD_3BD (def_pt, 0);
