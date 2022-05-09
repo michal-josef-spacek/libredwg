@@ -25,8 +25,6 @@
         FIELD_RCd (color_r11, 0);
       if (R11FLAG (FLAG_R11_LTYPE)) // 2
         FIELD_HANDLE (ltype, 1, 6);
-
-      // TODO: maybe move that to the entity
       PRE (R_10) { // XXX Check precise version
         if (R11FLAG (FLAG_R11_ELEVATION)) // 4
           FIELD_RD (elevation_r11, 38);
