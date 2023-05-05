@@ -1122,9 +1122,9 @@ dxf_header_read (Bit_Chain *restrict dat, Dwg_Data *restrict dwg)
               free (o->name);
               o->name = (char *)bit_utf8_to_TU ((char *)"*Model_Space", 0);
             }
-          // currently we can only encode DWGs to r13-r2000, but DXF's to
+          // currently we can only encode DWGs to r2.10-r2000, but DXF's to
           // almost everything.
-          if (dwg->header.from_version >= R_13b1
+          if (dwg->header.from_version >= R_2_10
               && dwg->header.from_version <= R_2000)
             dwg->header.version = dat->version = dwg->header.from_version;
           LOG_TRACE ("HEADER.version = %s,\tdat->version = %s\n",
