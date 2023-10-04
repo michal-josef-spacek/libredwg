@@ -3389,15 +3389,15 @@ dwg_encode (Dwg_Data *restrict dwg, Bit_Chain *restrict dat)
     if ((dwg->header.version < R_13b1 && !_obj->numheader_vars) // ie from DXF
         || (dwg->header.version >= R_13b1 && !_obj->dwg_version))
       {
-        _obj->zero_one_or_three = 1;
-        if (_verp)
-          _obj->dwg_version = _verp->dwg_version;
-        if (dwg->header.version > R_13b1)
-          {
-            // can be improved with r2004 by another lookup table
-            _obj->is_maint = 0xf;
-            _obj->maint_version = 29;
-          }
+//        _obj->zero_one_or_three = 1;
+//        if (_verp)
+//          _obj->dwg_version = _verp->dwg_version;
+//        if (dwg->header.version > R_13b1)
+//          {
+//            // can be improved with r2004 by another lookup table
+//            _obj->is_maint = 0xf;
+//            _obj->maint_version = 29;
+//          }
         /*
         switch (dwg->header.version)
           {
