@@ -551,7 +551,7 @@ json_float (Bit_Chain *restrict dat, jsmntokens_t *restrict tokens)
   return strtod ((char *)&dat->chain[t->start], NULL);
 }
 
-static long
+static int64_t
 json_long (Bit_Chain *restrict dat, jsmntokens_t *restrict tokens)
 {
   const jsmntok_t *t = &tokens->tokens[tokens->index];
@@ -565,7 +565,7 @@ json_long (Bit_Chain *restrict dat, jsmntokens_t *restrict tokens)
     }
   JSON_TOKENS_CHECK_OVERFLOW (return 0)
   tokens->index++;
-  return strtol ((char *)&dat->chain[t->start], NULL, 10);
+  return strtoll ((char *)&dat->chain[t->start], NULL, 10);
 }
 
 static uint64_t
@@ -1185,8 +1185,8 @@ json_HEADER (Bit_Chain *restrict dat, Dwg_Data *restrict dwg,
                    || strEQc (f->type, "BL") || strEQc (f->type, "RSd")
                    || strEQc (f->type, "BLd") || strEQc (f->type, "BSd")))
         {
-          long num = json_long (dat, tokens);
-          LOG_TRACE ("%s: %ld [%s]\n", key, num, f->type)
+          int64_t num = json_long (dat, tokens);
+          LOG_TRACE ("%s: %lld [%s]\n", key, num, f->type)
           dwg_dynapi_header_set_value (dwg, key, &num, 0);
         }
       else if (t->type == JSMN_PRIMITIVE
@@ -1259,7 +1259,7 @@ json_HEADER (Bit_Chain *restrict dat, Dwg_Data *restrict dwg,
                 }
               else
                 {
-                  LOG_WARN ("Ignored %s.%s[%d]: %ld [%s]", name, key, k,
+                  LOG_WARN ("Ignored %s.%s[%d]: %lld [%s]", name, key, k,
                              json_long (dat, tokens), f->type);
                 }
             }
