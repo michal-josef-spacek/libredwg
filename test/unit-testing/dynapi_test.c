@@ -42988,6 +42988,21 @@ static int test_BLOCKSTRETCHACTION (const Dwg_Object *obj)
     blockstretchaction->be_minor--;
   }
   {
+    BITCODE_BL bl94;
+    if (dwg_dynapi_entity_value (blockstretchaction, "BLOCKSTRETCHACTION", "bl94", &bl94, NULL)
+        && bl94 == blockstretchaction->bl94)
+      pass ();
+    else
+      fail ("BLOCKSTRETCHACTION.bl94 [BL] %u != %u", blockstretchaction->bl94, bl94);
+    bl94++;
+    if (dwg_dynapi_entity_set_value (blockstretchaction, "BLOCKSTRETCHACTION", "bl94", &bl94, 0)
+        && bl94 == blockstretchaction->bl94)
+      pass ();
+    else
+      fail ("BLOCKSTRETCHACTION.bl94 [BL] set+1 %u != %u", blockstretchaction->bl94, bl94);
+    blockstretchaction->bl94--;
+  }
+  {
     Dwg_BLOCKSTRETCHACTION_codes* codes;
     BITCODE_BL count = 0;
     if (dwg_dynapi_entity_value (blockstretchaction, "BLOCKSTRETCHACTION", "num_codes", &count, NULL)
@@ -67929,6 +67944,14 @@ test_sizes (void)
     {
       fprintf (stderr, "sizeof(struct _dwg_BLOCKSTRETCHACTION_codes): %d != "
                "dwg_dynapi_fields_size (\"BLOCKSTRETCHACTION_codes\"): %d\n", size1, size2);
+      error++;
+    }
+  size1 = sizeof (struct _dwg_BLOCKSTRETCHACTION_handle_indexes);
+  size2 = dwg_dynapi_fields_size ("BLOCKSTRETCHACTION_handle_indexes");
+  if (size1 != size2)
+    {
+      fprintf (stderr, "sizeof(struct _dwg_BLOCKSTRETCHACTION_handle_indexes): %d != "
+               "dwg_dynapi_fields_size (\"BLOCKSTRETCHACTION_handle_indexes\"): %d\n", size1, size2);
       error++;
     }
   size1 = sizeof (struct _dwg_BLOCKSTRETCHACTION_handles);
